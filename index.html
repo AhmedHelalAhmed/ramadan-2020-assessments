@@ -126,7 +126,40 @@
       </div>
     </div>
     <script>
+      let videos = [];
+      document
+        .getElementsByTagName("form")[0]
+        .addEventListener("submit", (e) => {
+          e.preventDefault();
+          let request = new XMLHttpRequest();
+          request.addEventListener("load", function (e) {
+            loadVideos();
+          });
+          request.open("POST", "//localhost:7777/video-request",this);
+          request.send();
+        });
 
+      document.addEventListener("DOMContentLoaded", function () {
+        loadVideos();
+      });
+
+      function loadVideos() {
+        let request = new XMLHttpRequest();
+        request.addEventListener("load", (e) => {
+          videos = JSON.parse(request.response);
+          let referenceCard = document.getElementsByClassName("card")[0];
+          referenceCard.setAttribute("style", "display:none");
+          videos.forEach((element, key) => {
+            let card = referenceCard.cloneNode(true);
+            card.childNodes[1].childNodes[1].childNodes[1].textContent =
+              "Title " + key;
+            card.style = "";
+            document.getElementById("listOfRequests").appendChild(card);
+          });
+        });
+        request.open("get", "//localhost:7777/video-request");
+        request.send();
+      }
     </script>
   </body>
 </html>
