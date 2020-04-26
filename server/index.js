@@ -15,10 +15,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/", (req, res) =>
   res.send("Welcome to semicolon academy APIs, use /video-request to get data")
 );
-
+// you have to restart server to get affacted
+// app.use(express.json); // way to handle if data send from frontend as json
 app.post("/video-request", async (req, res, next) => {
+  // console.log(req.body);
   const response = await VideoRequestData.createRequest(req.body);
-  res.redirect("http://127.0.0.1:5500/");
+  res.send(response);
   next();
 });
 

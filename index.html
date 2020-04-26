@@ -12,7 +12,7 @@
   <body>
     <div class="container my-5">
       <div class="formContainer my-5">
-        <form action="http://localhost:7777/video-request" method="POST">
+        <form id="formVideoRequest">
           <div class="row">
             <div class="col-md">
               <div class="form-group">
@@ -126,21 +126,46 @@
       </div>
     </div>
     <script>
-      let videos = [];
-      // document
-      //   .getElementsByTagName("form")[0]
-      //   .addEventListener("submit", (e) => {
-      //     e.preventDefault();
-      //     let request = new XMLHttpRequest();
-      //     request.addEventListener("load", function (e) {
-      //       loadVideos();
-      //     });
-      //     request.open("POST", "//localhost:7777/video-request", this);
-      //     request.send();
-      //   });
-
       document.addEventListener("DOMContentLoaded", function () {
-        loadVideos();
+        /*
+                this will fire after dom elements loaded and before images and css loaded
+                but
+                window.load event => will fire when every thing is loaded
+              */
+        const formVidReq = document.getElementById("formVideoRequest");
+        let videos = [];
+
+        // loadVideos();
+
+        formVidReq.addEventListener("submit", (e) => {
+          e.preventDefault();
+          /*
+                fetch("//localhost:7777/video-request");
+                this will make get request and reply with promise
+                */
+
+          const formData = new FormData(formVidReq);
+          fetch("//localhost:7777/video-request", {
+            method: "POST",
+            /*
+            // here you send data as json
+            body: JSON.stringify({
+              author_name: "Macey Bell",
+              author_email: "jigiwegev@mailinator.net",
+              topic_title: "Qui ut rerum quo sae",
+              target_level: "medium",
+              topic_details: "Eum ut earum enim es",
+              expected_result: "Sed sequi veniam ut",
+            }),
+            */
+            // another way to send data with form data
+            body: formData, // this expect in server to deal with data multi part like you upload file
+          })
+            .then((bold) => bold.json()) // to be sure that data is json
+            .then((data) => {
+              console.log(data);
+            });
+        });
       });
 
       function loadVideos() {
