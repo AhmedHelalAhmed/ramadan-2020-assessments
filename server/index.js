@@ -5,7 +5,7 @@ const port = process.env.PORT || 7777;
 const VideoRequestData = require("./data/video-requests.data");
 const cors = require("cors");
 const mongoose = require("./models/mongo.config");
-
+const multer = require("multer");
 if (!Object.keys(mongoose).length) return;
 
 app.use(cors());
@@ -17,7 +17,12 @@ app.get("/", (req, res) =>
 );
 // you have to restart server to get affacted
 // app.use(express.json); // way to handle if data send from frontend as json
-app.post("/video-request", async (req, res, next) => {
+// in case of form data we need to install npm install --save multer
+// as server deal with data as upload form (multi part)
+const upload = multer();
+// server expect multi part in case of form data
+// none as we do not send any file
+app.post("/video-request", upload.none(), async (req, res, next) => {
   // console.log(req.body);
   const response = await VideoRequestData.createRequest(req.body);
   res.send(response);
