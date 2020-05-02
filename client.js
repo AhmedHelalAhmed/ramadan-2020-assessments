@@ -8,13 +8,19 @@ function getSingleVideoRequest(videoInfo) {
         <h3>${videoInfo.topic_title}</h3>
         <p class="text-muted mb-2">${videoInfo.topic_details}</p>
         <p class="mb-0 text-muted">
-          <strong>Expected results:</strong> ${videoInfo.expected_result}
+
+         ${
+           videoInfo.expected_result &&
+           `<strong>Expected results:</strong> ${videoInfo.expected_result}`
+         }
         </p>
       </div>
       <div class="d-flex flex-column text-center">
-        <a class="btn btn-link">🔺</a>
-        <h3>0</h3>
-        <a class="btn btn-link">🔻</a>
+        <a id="votes_ups_${videoInfo._id}" class="btn btn-link">🔺</a>
+        <h3 id="score_vote_${videoInfo._id}">${
+    videoInfo.votes.ups - videoInfo.votes.downs
+  }</h3>
+        <a id="votes_downs_${videoInfo._id}" class="btn btn-link">🔻</a>
       </div>
       </div>
       <div class="card-footer d-flex flex-row justify-content-between">
@@ -46,12 +52,58 @@ document.addEventListener("DOMContentLoaded", function () {
   const listOfVideoesElement = document.getElementById("listOfRequests");
 
   fetch("//localhost:7777/video-request")
-    .then((blob) => blob.json())
+    .then((bolb) => bolb.json())
     // .then((data) => console.log(data))
     .then((data) => {
       data.forEach((videoInfo) => {
         // debugger;
         listOfVideoesElement.appendChild(getSingleVideoRequest(videoInfo));
+
+        const voteUpsElement = document.getElementById(
+          `votes_ups_${videoInfo._id}`
+        );
+        const voteDownsElement = document.getElementById(
+          `votes_downs_${videoInfo._id}`
+        );
+        const scoreVoteElement = document.getElementById(
+          `score_vote_${videoInfo._id}`
+        );
+
+        voteUpsElement.addEventListener("click", (e) => {
+          fetch("//localhost:7777/video-request/vote", {
+            method: "PUT",
+            headers: {
+              "content-Type": "application/json",
+            },
+            // as we send json then we need to make it string
+            body: JSON.stringify({
+              id: videoInfo._id,
+              vote_type: "ups",
+            }),
+          }) // it return promise => blo=>then pase it as json
+            .then((bolb) => bolb.json())
+            .then((data) => {
+              scoreVoteElement.innerText = data.ups - data.downs;
+            });
+        });
+
+        voteDownsElement.addEventListener("click", (e) => {
+          fetch("//localhost:7777/video-request/vote", {
+            method: "PUT",
+            headers: {
+              "content-Type": "application/json",
+            },
+            // as we send json then we need to make it string
+            body: JSON.stringify({
+              id: videoInfo._id,
+              vote_type: "downs",
+            }),
+          }) // it return promise => blo=>then pase it as json
+            .then((bolb) => bolb.json())
+            .then((data) => {
+              scoreVoteElement.innerText = data.ups - data.downs;
+            });
+        });
       });
     });
   formVideoRequestElement.addEventListener("submit", (e) => {
@@ -78,8 +130,10 @@ document.addEventListener("DOMContentLoaded", function () {
       // another way to send data with form data
       body: formData, // this expect in server to deal with data multi part like you upload file
     })
-      .then((bold) => bold.json()) // to be sure that data is json
+      .then((bolb) => bolb.json()) // to be sure that data is json
       .then((data) => {
+        formVideoRequestElement.reset();
+        listOfVideoesElement.prepend(getSingleVideoRequest(data));
         console.log(data);
       });
   });

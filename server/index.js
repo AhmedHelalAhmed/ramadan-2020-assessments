@@ -53,12 +53,12 @@ app.post("/users/login", async (req, res, next) => {
   next();
 });
 
-app.use(express.json());
+app.use(express.json()); // this means it expected => header application json
 
 app.put("/video-request/vote", async (req, res, next) => {
   const { id, vote_type } = req.body;
   const response = await VideoRequestData.updateVoteForRequest(id, vote_type);
-  res.send(response);
+  res.send(response.votes);
   next();
 });
 
