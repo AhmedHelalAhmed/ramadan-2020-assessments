@@ -1,5 +1,7 @@
 const listOfVideoesElement = document.getElementById("listOfRequests");
 let sortBy = "newFist";
+let searchTerm = "";
+
 function renderSingleVideoRequest(videoInfo, isPrepend = false) {
   const videoRequestContainerElement = document.createElement("div"); // this is node
   // binding data
@@ -125,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
 
       sortBy = this.querySelector("input").value;
-      loadAllVideoRequests(sortBy);
+      loadAllVideoRequests(sortBy, searchTerm);
 
       this.classList.add("active");
 
@@ -139,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   searchBoxElement.addEventListener("input", (e) => {
     // console.log(e.target.value);
-    const searchTerm = e.target.value;
+    searchTerm = e.target.value;
 
     // undefined to take the default
     loadAllVideoRequests(sortBy, searchTerm);
