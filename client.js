@@ -1,4 +1,6 @@
-function getSingleVideoRequest(videoInfo) {
+const listOfVideoesElement = document.getElementById("listOfRequests");
+
+function renderSingleVideoRequest(videoInfo, isPrepend = false) {
   const videoRequestContainerElement = document.createElement("div"); // this is node
   // binding data
   videoRequestContainerElement.innerHTML = `
@@ -39,9 +41,69 @@ function getSingleVideoRequest(videoInfo) {
     </div>
   </div>
   `;
-  return videoRequestContainerElement;
+  if (isPrepend) {
+    listOfVideoesElement.prepend(videoRequestContainerElement);
+  } else {
+    listOfVideoesElement.appendChild(videoRequestContainerElement);
+  }
+
+  const voteUpsElement = document.getElementById(`votes_ups_${videoInfo._id}`);
+  const voteDownsElement = document.getElementById(
+    `votes_downs_${videoInfo._id}`
+  );
+  const scoreVoteElement = document.getElementById(
+    `score_vote_${videoInfo._id}`
+  );
+
+  voteUpsElement.addEventListener("click", (e) => {
+    fetch("//localhost:7777/video-request/vote", {
+      method: "PUT",
+      headers: {
+        "content-Type": "application/json",
+      },
+      // as we send json then we need to make it string
+      body: JSON.stringify({
+        id: videoInfo._id,
+        vote_type: "ups",
+      }),
+    }) // it return promise => blo=>then pase it as json
+      .then((bolb) => bolb.json())
+      .then((data) => {
+        scoreVoteElement.innerText = data.ups - data.downs;
+      });
+  });
+
+  voteDownsElement.addEventListener("click", (e) => {
+    fetch("//localhost:7777/video-request/vote", {
+      method: "PUT",
+      headers: {
+        "content-Type": "application/json",
+      },
+      // as we send json then we need to make it string
+      body: JSON.stringify({
+        id: videoInfo._id,
+        vote_type: "downs",
+      }),
+    }) // it return promise => blo=>then pase it as json
+      .then((bolb) => bolb.json())
+      .then((data) => {
+        scoreVoteElement.innerText = data.ups - data.downs;
+      });
+  });
 }
 
+function loadAllVideoRequests(sortBy = "newFirst") {
+  fetch(`//localhost:7777/video-request?sortBy=${sortBy}`)
+    .then((bolb) => bolb.json())
+    // .then((data) => console.log(data))
+    .then((data) => {
+      listOfVideoesElement.innerHTML = "";
+      data.forEach((videoInfo) => {
+        // debugger;
+        renderSingleVideoRequest(videoInfo);
+      });
+    });
+}
 document.addEventListener("DOMContentLoaded", function () {
   /*
     this will fire after dom elements loaded and before images and css loaded
@@ -49,63 +111,28 @@ document.addEventListener("DOMContentLoaded", function () {
     window.load event => will fire when every thing is loaded
   */
   const formVideoRequestElement = document.getElementById("formVideoRequest");
-  const listOfVideoesElement = document.getElementById("listOfRequests");
 
-  fetch("//localhost:7777/video-request")
-    .then((bolb) => bolb.json())
-    // .then((data) => console.log(data))
-    .then((data) => {
-      data.forEach((videoInfo) => {
-        // debugger;
-        listOfVideoesElement.appendChild(getSingleVideoRequest(videoInfo));
+  const sortByElements = document.querySelectorAll("[id*=sort_by_]");
 
-        const voteUpsElement = document.getElementById(
-          `votes_ups_${videoInfo._id}`
-        );
-        const voteDownsElement = document.getElementById(
-          `votes_downs_${videoInfo._id}`
-        );
-        const scoreVoteElement = document.getElementById(
-          `score_vote_${videoInfo._id}`
-        );
+  loadAllVideoRequests();
 
-        voteUpsElement.addEventListener("click", (e) => {
-          fetch("//localhost:7777/video-request/vote", {
-            method: "PUT",
-            headers: {
-              "content-Type": "application/json",
-            },
-            // as we send json then we need to make it string
-            body: JSON.stringify({
-              id: videoInfo._id,
-              vote_type: "ups",
-            }),
-          }) // it return promise => blo=>then pase it as json
-            .then((bolb) => bolb.json())
-            .then((data) => {
-              scoreVoteElement.innerText = data.ups - data.downs;
-            });
-        });
+  sortByElements.forEach((element) => {
+    element.addEventListener("click", function (e) {
+      e.preventDefault();
 
-        voteDownsElement.addEventListener("click", (e) => {
-          fetch("//localhost:7777/video-request/vote", {
-            method: "PUT",
-            headers: {
-              "content-Type": "application/json",
-            },
-            // as we send json then we need to make it string
-            body: JSON.stringify({
-              id: videoInfo._id,
-              vote_type: "downs",
-            }),
-          }) // it return promise => blo=>then pase it as json
-            .then((bolb) => bolb.json())
-            .then((data) => {
-              scoreVoteElement.innerText = data.ups - data.downs;
-            });
-        });
-      });
+      const sortBy = this.querySelector("input");
+      loadAllVideoRequests(sortBy.value);
+
+      this.classList.add("active");
+
+      if (sortBy.value === "topVotedFirst") {
+        document.getElementById("sort_by_new").classList.remove("active");
+      } else {
+        document.getElementById("sort_by_top").classList.remove("active");
+      }
     });
+  });
+
   formVideoRequestElement.addEventListener("submit", (e) => {
     e.preventDefault();
     /*
@@ -133,8 +160,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((bolb) => bolb.json()) // to be sure that data is json
       .then((data) => {
         formVideoRequestElement.reset();
-        listOfVideoesElement.prepend(getSingleVideoRequest(data));
-        console.log(data);
+        renderSingleVideoRequest(data, true);
       });
   });
 });
