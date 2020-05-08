@@ -92,8 +92,10 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
   });
 }
 
-function loadAllVideoRequests(sortBy = "newFirst") {
-  fetch(`//localhost:7777/video-request?sortBy=${sortBy}`)
+function loadAllVideoRequests(sortBy = "newFirst", searchTerm = "") {
+  fetch(
+    `//localhost:7777/video-request?sortBy=${sortBy}&searchTerm=${searchTerm}`
+  )
     .then((bolb) => bolb.json())
     // .then((data) => console.log(data))
     .then((data) => {
@@ -114,6 +116,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const sortByElements = document.querySelectorAll("[id*=sort_by_]");
 
+  const searchBoxElement = document.getElementById("search_box");
+
   loadAllVideoRequests();
 
   sortByElements.forEach((element) => {
@@ -131,6 +135,14 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("sort_by_top").classList.remove("active");
       }
     });
+  });
+
+  searchBoxElement.addEventListener("input", (e) => {
+    // console.log(e.target.value);
+    const searchTerm = e.target.value;
+
+    // undefined to take the default
+    loadAllVideoRequests(undefined, searchTerm);
   });
 
   formVideoRequestElement.addEventListener("submit", (e) => {
