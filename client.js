@@ -1,5 +1,5 @@
 const listOfVideoesElement = document.getElementById("listOfRequests");
-
+let sortBy = "newFist";
 function renderSingleVideoRequest(videoInfo, isPrepend = false) {
   const videoRequestContainerElement = document.createElement("div"); // this is node
   // binding data
@@ -124,12 +124,12 @@ document.addEventListener("DOMContentLoaded", function () {
     element.addEventListener("click", function (e) {
       e.preventDefault();
 
-      const sortBy = this.querySelector("input");
-      loadAllVideoRequests(sortBy.value);
+      sortBy = this.querySelector("input").value;
+      loadAllVideoRequests(sortBy);
 
       this.classList.add("active");
 
-      if (sortBy.value === "topVotedFirst") {
+      if (sortBy === "topVotedFirst") {
         document.getElementById("sort_by_new").classList.remove("active");
       } else {
         document.getElementById("sort_by_top").classList.remove("active");
@@ -142,7 +142,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const searchTerm = e.target.value;
 
     // undefined to take the default
-    loadAllVideoRequests(undefined, searchTerm);
+    loadAllVideoRequests(sortBy, searchTerm);
   });
 
   formVideoRequestElement.addEventListener("submit", (e) => {
