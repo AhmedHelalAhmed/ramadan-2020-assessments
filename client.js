@@ -108,6 +108,18 @@ function loadAllVideoRequests(sortBy = "newFirst", searchTerm = "") {
       });
     });
 }
+
+function debounce(fn, time) {
+  // delay then do action
+  let timeout;
+
+  return function (...args) {
+    clearTimeout(timeout);
+    // apply to apply current context
+    timeout = setTimeout(() => fn.apply(this, args), time);
+  };
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   /*
     this will fire after dom elements loaded and before images and css loaded
@@ -139,13 +151,16 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  searchBoxElement.addEventListener("input", (e) => {
-    // console.log(e.target.value);
-    searchTerm = e.target.value;
+  searchBoxElement.addEventListener(
+    "input",
+    debounce((e) => {
+      // console.log(e.target.value);
+      searchTerm = e.target.value;
 
-    // undefined to take the default
-    loadAllVideoRequests(sortBy, searchTerm);
-  });
+      // undefined to take the default
+      loadAllVideoRequests(sortBy, searchTerm);
+    }, 500)
+  );
 
   formVideoRequestElement.addEventListener("submit", (e) => {
     e.preventDefault();
