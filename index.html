@@ -21,6 +21,8 @@
                   class="form-control"
                   name="author_name"
                   placeholder="Write your name here"
+                  type="text"
+                  required
                 />
               </div>
             </div>
@@ -31,6 +33,8 @@
                   class="form-control"
                   name="author_email"
                   placeholder="Write your email here"
+                  type="email"
+                  required
                 />
               </div>
             </div>
@@ -41,10 +45,16 @@
               <div class="form-group">
                 <label for="topic_title">Topic *</label>
                 <input
-                  class="form-control"
+                  type="text"
+                  class="form-control is-invalid"
                   name="topic_title"
                   placeholder="Write your suggested topic here"
+                  required
+                  maxlength="100"
                 />
+                <p class="invalid-feedback">
+                  this fild is required
+                </p>
               </div>
             </div>
             <div class="col-md">
@@ -70,6 +80,7 @@
                   class="form-control"
                   name="topic_details"
                   placeholder="Write your topic in more details here"
+                  required
                 ></textarea>
               </div>
             </div>
