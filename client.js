@@ -120,6 +120,33 @@ function debounce(fn, time) {
   };
 }
 
+function checkValidity(formData) {
+  const name = formData.get("author_name");
+  const email = formData.get("author_email");
+  const topic = formData.get("topic_title");
+  const topicDetails = formData.get("topic_details");
+
+  if (!name) {
+    document.querySelector("[name=author_name]").classList.add("is-invalid");
+    return;
+  }
+
+  if (!email) {
+    document.querySelector("[name=author_email]").classList.add("is-invalid");
+    return;
+  }
+
+  if (!topic) {
+    document.querySelector("[name=topic_title]").classList.add("is-invalid");
+    return;
+  }
+
+  if (!topicDetails) {
+    document.querySelector("[name=topic_details]").classList.add("is-invalid");
+    return;
+  }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   /*
     this will fire after dom elements loaded and before images and css loaded
@@ -169,6 +196,12 @@ document.addEventListener("DOMContentLoaded", function () {
       this will make get request and reply with promise
     */
     const formData = new FormData(formVideoRequestElement);
+
+    const isValid = checkValidity(formData);
+
+    if (!isValid) {
+      return;
+    }
 
     fetch("//localhost:7777/video-request", {
       method: "POST",
