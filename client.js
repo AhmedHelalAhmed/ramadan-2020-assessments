@@ -1,6 +1,11 @@
 const listOfVideoesElement = document.getElementById("listOfRequests");
-let sortBy = "newFist";
-let searchTerm = "";
+// if you made load it will come back to this default value
+// state is not persisted
+const state = {
+  sortBy: "newFist",
+  searchTerm: "",
+  userId: "",
+};
 
 function renderSingleVideoRequest(videoInfo, isPrepend = false) {
   const videoRequestContainerElement = document.createElement("div"); // this is node
@@ -121,20 +126,8 @@ function debounce(fn, time) {
 }
 
 function checkValidity(formData) {
-  const name = formData.get("author_name");
-  const email = formData.get("author_email");
   const topic = formData.get("topic_title");
   const topicDetails = formData.get("topic_details");
-
-  if (!name) {
-    document.querySelector("[name=author_name]").classList.add("is-invalid");
-  }
-
-  const emailPattern = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-
-  if (!email || !emailPattern.test(email)) {
-    document.querySelector("[name=author_email]").classList.add("is-invalid");
-  }
 
   if (!topic || topic.length > 30) {
     document.querySelector("[name=topic_title]").classList.add("is-invalid");
@@ -168,10 +161,24 @@ document.addEventListener("DOMContentLoaded", function () {
     window.load event => will fire when every thing is loaded
   */
   const formVideoRequestElement = document.getElementById("formVideoRequest");
-
   const sortByElements = document.querySelectorAll("[id*=sort_by_]");
-
   const searchBoxElement = document.getElementById("search_box");
+
+  const formLoginElement = document.querySelector(".login-form");
+
+  const appContentElement = document.querySelector(".app-content");
+
+  // this return query string
+  // it should this be two pages and between them routing
+  // in this case the above you need
+  // 1- server send html and you render it
+  // 2- mange browser histroy (push in browser history this is loaded to enable back button in browser)
+  // here we send post back with data and then hide and show depend on the data sent from server
+  if (window.location.search) {
+    state.userId = new URLSearchParams(window.location.search).get("id");
+    formLoginElement.classList.add("d-none");
+    appContentElement.classList.remove("d-none");
+  }
 
   loadAllVideoRequests();
 
@@ -179,12 +186,12 @@ document.addEventListener("DOMContentLoaded", function () {
     element.addEventListener("click", function (e) {
       e.preventDefault();
 
-      sortBy = this.querySelector("input").value;
-      loadAllVideoRequests(sortBy, searchTerm);
+      state.sortBy = this.querySelector("input").value;
+      loadAllVideoRequests(state.sortBy, state.searchTerm);
 
       this.classList.add("active");
 
-      if (sortBy === "topVotedFirst") {
+      if (state.sortBy === "topVotedFirst") {
         document.getElementById("sort_by_new").classList.remove("active");
       } else {
         document.getElementById("sort_by_top").classList.remove("active");
@@ -196,10 +203,10 @@ document.addEventListener("DOMContentLoaded", function () {
     "input",
     debounce((e) => {
       // console.log(e.target.value);
-      searchTerm = e.target.value;
+      state.searchTerm = e.target.value;
 
       // undefined to take the default
-      loadAllVideoRequests(sortBy, searchTerm);
+      loadAllVideoRequests(state.sortBy, state.searchTerm);
     }, 500)
   );
 
@@ -210,6 +217,8 @@ document.addEventListener("DOMContentLoaded", function () {
       this will make get request and reply with promise
     */
     const formData = new FormData(formVideoRequestElement);
+
+    formData.append("author_id", state.userId);
 
     const isValid = checkValidity(formData);
 
