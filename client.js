@@ -27,7 +27,7 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
       <div class="d-flex flex-column text-center">
         <a id="votes_ups_${videoInfo._id}" class="btn btn-link">🔺</a>
         <h3 id="score_vote_${videoInfo._id}">${
-    videoInfo.votes.ups - videoInfo.votes.downs
+    videoInfo.votes.ups.length - videoInfo.votes.downs.length
   }</h3>
         <a id="votes_downs_${videoInfo._id}" class="btn btn-link">🔻</a>
       </div>
@@ -54,48 +54,38 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
     listOfVideoesElement.appendChild(videoRequestContainerElement);
   }
 
-  const voteUpsElement = document.getElementById(`votes_ups_${videoInfo._id}`);
-  const voteDownsElement = document.getElementById(
-    `votes_downs_${videoInfo._id}`
-  );
+  applyVoteStyle(videoInfo._id, videoInfo.votes);
+
   const scoreVoteElement = document.getElementById(
     `score_vote_${videoInfo._id}`
   );
+  const votesElements = document.querySelectorAll(
+    `[id^=votes_][id$=_${videoInfo._id}]`
+  );
 
-  voteUpsElement.addEventListener("click", (e) => {
-    fetch("//localhost:7777/video-request/vote", {
-      method: "PUT",
-      headers: {
-        "content-Type": "application/json",
-      },
-      // as we send json then we need to make it string
-      body: JSON.stringify({
-        id: videoInfo._id,
-        vote_type: "ups",
-      }),
-    }) // it return promise => blo=>then pase it as json
-      .then((bolb) => bolb.json())
-      .then((data) => {
-        scoreVoteElement.innerText = data.ups - data.downs;
-      });
-  });
+  votesElements.forEach((item) => {
+    item.addEventListener("click", function (e) {
+      e.preventDefault();
+      const [, vote_type, id] = e.target.getAttribute("id").split("_");
 
-  voteDownsElement.addEventListener("click", (e) => {
-    fetch("//localhost:7777/video-request/vote", {
-      method: "PUT",
-      headers: {
-        "content-Type": "application/json",
-      },
-      // as we send json then we need to make it string
-      body: JSON.stringify({
-        id: videoInfo._id,
-        vote_type: "downs",
-      }),
-    }) // it return promise => blo=>then pase it as json
-      .then((bolb) => bolb.json())
-      .then((data) => {
-        scoreVoteElement.innerText = data.ups - data.downs;
-      });
+      fetch("//localhost:7777/video-request/vote", {
+        method: "PUT",
+        headers: {
+          "content-Type": "application/json",
+        },
+        // as we send json then we need to make it string
+        body: JSON.stringify({
+          id,
+          vote_type,
+          user_id: state.userId,
+        }),
+      }) // it return promise => blo=>then pase it as json
+        .then((bolb) => bolb.json())
+        .then((data) => {
+          scoreVoteElement.innerText = data.ups.length - data.downs.length;
+          applyVoteStyle(id, data, vote_type);
+        });
+    });
   });
 }
 
@@ -154,6 +144,32 @@ function checkValidity(formData) {
   return true;
 }
 
+function applyVoteStyle(video_id, votes_list, vote_type) {
+  if (!vote_type) {
+    if (votes_list.ups.includes(state.userId)) {
+      vote_type = "ups";
+    } else if (votes_list.downs.includes(state.userId)) {
+      vote_type = "downs";
+    } else {
+      return;
+    }
+  }
+
+  const voteUpsElement = document.getElementById(`votes_ups_${video_id}`);
+  const voteDownsElement = document.getElementById(`votes_downs_${video_id}`);
+
+  const voteDirectionElement =
+    vote_type === "ups" ? voteUpsElement : voteDownsElement;
+  const otherDirectionElement =
+    vote_type === "ups" ? voteDownsElement : voteUpsElement;
+
+  if (votes_list[vote_type].includes(state.userId)) {
+    voteDirectionElement.style.opacity = 1;
+    otherDirectionElement.style.opacity = "0.5";
+  } else {
+    otherDirectionElement.style.opacity = "1";
+  }
+}
 document.addEventListener("DOMContentLoaded", function () {
   /*
     this will fire after dom elements loaded and before images and css loaded

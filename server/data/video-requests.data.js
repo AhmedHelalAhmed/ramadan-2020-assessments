@@ -33,15 +33,30 @@ module.exports = {
     return VideoRequest.findByIdAndUpdate(id, newVidDetails);
   },
 
-  updateVoteForRequest: async (id, vote_type) => {
+  updateVoteForRequest: async (id, vote_type, user_id) => {
     const oldRequest = await VideoRequest.findById({ _id: id });
     const other_type = vote_type === "ups" ? "downs" : "ups";
+
+    const oldVoteList = oldRequest.votes[vote_type];
+    const oldOtherList = oldRequest.votes[other_type];
+    // an other way => oldVoteList.find((u) => u === user_id)
+    if (!oldVoteList.includes(user_id)) {
+      oldVoteList.push(user_id);
+    } else {
+      // change the current
+      oldVoteList.splice(user_id);
+    }
+
+    if (oldOtherList.includes(user_id)) {
+      oldOtherList.splice(user_id);
+    }
+
     return VideoRequest.findByIdAndUpdate(
       { _id: id },
       {
         votes: {
-          [vote_type]: ++oldRequest.votes[vote_type],
-          [other_type]: oldRequest.votes[other_type],
+          [vote_type]: oldVoteList,
+          [other_type]: oldOtherList,
         },
       },
       {
