@@ -1,7 +1,15 @@
-var VideoRequest = require("./../models/video-requests.model");
+const VideoRequest = require("./../models/video-requests.model");
+const User = require("./../models/user.model");
 
 module.exports = {
-  createRequest: (vidRequestData) => {
+  createRequest: async (vidRequestData) => {
+    const authorId = vidRequestData.author_id;
+    if (authorId) {
+      // this tell js to await in this line => instead of using promise and then word
+      const userObject = await User.findOne({ _id: authorId });
+      vidRequestData.author_name = userObject.author_name;
+      vidRequestData.author_email = userObject.author_email;
+    }
     let newRequest = new VideoRequest(vidRequestData);
     return newRequest.save();
   },
