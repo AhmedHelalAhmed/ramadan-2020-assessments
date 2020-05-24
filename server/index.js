@@ -10,8 +10,8 @@ const multer = require("multer");
 if (!Object.keys(mongoose).length) return;
 
 app.use(cors());
-
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json()); // this means it expected => header application json
 
 app.get("/", (req, res) =>
   res.send("Welcome to semicolon academy APIs, use /video-request to get data")
@@ -57,7 +57,9 @@ app.get("/video-request", async (req, res, next) => {
 });
 
 app.put("/video-request", async (req, res, next) => {
-  const response = await VideoRequestData.updateRequest(req.body.id, req.body);
+  const { id, status, resVideo } = req.body;
+
+  const response = await VideoRequestData.updateRequest(id, status, resVideo);
   res.send(response);
   next();
 });

@@ -1,10 +1,14 @@
 const listOfVideoesElement = document.getElementById("listOfRequests");
+
+const SUPER_USER_ID = "19900411";
+
 // if you made load it will come back to this default value
 // state is not persisted
 const state = {
   sortBy: "newFist",
   searchTerm: "",
   userId: "",
+  isSuperUser: false,
 };
 
 function renderSingleVideoRequest(videoInfo, isPrepend = false) {
@@ -12,6 +16,32 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
   // binding data
   videoRequestContainerElement.innerHTML = `
   <div class="card mb-3">
+  ${
+    state.isSuperUser
+      ? `<div class="card-header d-flex justify-content-between">
+  <select id="admin_change_status_${videoInfo._id}">
+  <option value="new">new</option>
+  <option value="planned">planned</option>
+  <option value="done">done</option>
+  </select>
+  <div class="input-group ml-2 mr-5 ${
+    videoInfo.status !== "done" ? "d-none" : ""
+  }" id="admin_video_res_container_${videoInfo._id}">
+    <input type="text" class="form-control" 
+          id="admin_video_res_${videoInfo._id}"
+          placeholder="paste here youtube video id"/>
+    <div class="input-group-append">
+    <button id="admin_save_video_res_${
+      videoInfo._id
+    }" class="btn btn-outline-secondary" type="button">Save</button>
+    </div>
+  </div>
+  <button id="admin_delete_video_req_${
+    videoInfo._id
+  }" class="btn btn-danger" type="button">delete</button>
+  </div>`
+      : ""
+  }
     <div class="card-body d-flex justify-content-between flex-row">
       <div class="d-flex flex-column">
         <h3>${videoInfo.topic_title}</h3>
@@ -54,6 +84,70 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
     listOfVideoesElement.appendChild(videoRequestContainerElement);
   }
 
+  const adminChangeStatusElement = document.getElementById(
+    `admin_change_status_${videoInfo._id}`
+  );
+  const adminVideoResolutionElement = document.getElementById(
+    `admin_video_res_${videoInfo._id}`
+  );
+  const adminVideoResolutionContainer = document.getElementById(
+    `admin_video_res_container_${videoInfo._id}`
+  );
+  const adminSaveVideoResolutionElement = document.getElementById(
+    `admin_save_video_res_${videoInfo._id}`
+  );
+  const adminDeleteVideoRequestElement = document.getElementById(
+    `admin_delete_video_req_${videoInfo._id}`
+  );
+  if (status.isSuperUser) {
+    adminChangeStatusElement.value = videoInfo.status;
+    adminVideoResolutionElement.value = videoInfo.video_ref.link;
+
+    adminChangeStatusElement.addEventListener("change", (e) => {
+      if (e.target.value === "done") {
+        adminVideoResolutionContainer.classList.remove("d-none");
+      } else {
+        updateVideoStatus(videoInfo._id, e.target.value);
+      }
+    });
+
+    adminSaveVideoResolutionElement.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      if (!adminVideoResolutionElement.value) {
+        adminVideoResolutionElement.classList.add("is-invalid");
+        adminVideoResolutionElement.addEventListener("input", (_) => {
+          adminVideoResolutionElement.classList.remove("is-invalid");
+        });
+        return;
+      }
+
+      updateVideoStatus(
+        videoInfo._id,
+        "done",
+        adminVideoResolutionElement.value
+      );
+    });
+
+    adminDeleteVideoRequestElement.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      const isSure = confirm(
+        `Are you sure you want to delete "${videoInfo.topic_title}" ?`
+      );
+
+      if (!isSure) {
+        return;
+      }
+      fetch("//localhost:7777/video-request", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: videoInfo._id }),
+      })
+        .then((res) => res.json())
+        .then((data) => window.location.reload());
+    });
+  }
   applyVoteStyle(videoInfo._id, videoInfo.votes);
 
   const scoreVoteElement = document.getElementById(
@@ -64,6 +158,10 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
   );
 
   votesElements.forEach((item) => {
+    if (state.isSuperUser) {
+      return;
+    }
+
     item.addEventListener("click", function (e) {
       e.preventDefault();
       const [, vote_type, id] = e.target.getAttribute("id").split("_");
@@ -144,7 +242,30 @@ function checkValidity(formData) {
   return true;
 }
 
+function updateVideoStatus(id, status, resVideo = "") {
+  fetch("//localhost:7777/video-request", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, status, resVideo }),
+  })
+    .then((res) => res.json())
+    .then((data) => window.location.reload());
+}
+
 function applyVoteStyle(video_id, votes_list, vote_type) {
+  const voteUpsElement = document.getElementById(`votes_ups_${video_id}`);
+  const voteDownsElement = document.getElementById(`votes_downs_${video_id}`);
+
+  // super admin have no right to vote
+  if (state.isSuperUser) {
+    voteUpsElement.style.opacity = "0.5";
+    voteUpsElement.style.cursor = "not-allowed";
+    voteDownsElement.style.opacity = "0.5";
+    voteDownsElement.style.cursor = "not-allowed";
+
+    return;
+  }
+
   if (!vote_type) {
     if (votes_list.ups.includes(state.userId)) {
       vote_type = "ups";
@@ -154,9 +275,6 @@ function applyVoteStyle(video_id, votes_list, vote_type) {
       return;
     }
   }
-
-  const voteUpsElement = document.getElementById(`votes_ups_${video_id}`);
-  const voteDownsElement = document.getElementById(`votes_downs_${video_id}`);
 
   const voteDirectionElement =
     vote_type === "ups" ? voteUpsElement : voteDownsElement;
@@ -192,6 +310,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // here we send post back with data and then hide and show depend on the data sent from server
   if (window.location.search) {
     state.userId = new URLSearchParams(window.location.search).get("id");
+
+    if (state.userId === SUPER_USER_ID) {
+      state.isSuperUser = true;
+      document.querySelector(".normal-user-content").classList.add("d-none");
+    }
+
     formLoginElement.classList.add("d-none");
     appContentElement.classList.remove("d-none");
   }
