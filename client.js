@@ -7,6 +7,7 @@ const SUPER_USER_ID = "19900411";
 const state = {
   sortBy: "newFist",
   searchTerm: "",
+  filterBy: "all",
   userId: "",
   isSuperUser: false,
 };
@@ -54,6 +55,16 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
          }
         </p>
       </div>
+
+    ${
+      videoInfo.status === "done"
+        ? `  <div class="ml-auto mr-3">
+      <iframe width="240" height="135"
+      src="http://www.youtube.com/embed/${videoInfo.video_ref.link}"
+      frameborder="0" allowfullscreen></iframe>
+      </div>`
+        : ""
+    }
       <div class="d-flex flex-column text-center">
         <a id="votes_ups_${videoInfo._id}" class="btn btn-link">🔺</a>
         <h3 id="score_vote_${videoInfo._id}">${
@@ -63,18 +74,28 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
       </div>
       </div>
       <div class="card-footer d-flex flex-row justify-content-between">
-      <div>
-        <span class="text-info">${videoInfo.status.toUpperCase()}</span>
+      <div class="${
+        videoInfo.status === "done"
+          ? "text-success"
+          : videoInfo.status === "planned"
+          ? "text-primary"
+          : ""
+      }">
+        <span>${videoInfo.status.toUpperCase()} ${
+    videoInfo.status === "done"
+      ? ` on ${new Date(videoInfo.video_ref.date).toLocaleDateString()}`
+      : ""
+  }</span>
         &bullet; added by <strong>${videoInfo.author_name}</strong> on
         <strong>${new Date(videoInfo.submit_date).toLocaleDateString()}</strong>
       </div>
-      <div
+      <divstatus
         class="d-flex justify-content-center flex-column 408ml-auto mr-2"
       >
         <div class="badge badge-success">
           ${videoInfo.target_level}
         </div>
-      </div>
+      </divstatus>
     </div>
   </div>
   `;
@@ -99,7 +120,7 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
   const adminDeleteVideoRequestElement = document.getElementById(
     `admin_delete_video_req_${videoInfo._id}`
   );
-  if (status.isSuperUser) {
+  if (state.isSuperUser) {
     adminChangeStatusElement.value = videoInfo.status;
     adminVideoResolutionElement.value = videoInfo.video_ref.link;
 
@@ -148,7 +169,7 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
         .then((data) => window.location.reload());
     });
   }
-  applyVoteStyle(videoInfo._id, videoInfo.votes);
+  applyVoteStyle(videoInfo._id, videoInfo.votes, videoInfo.status === "done");
 
   const scoreVoteElement = document.getElementById(
     `score_vote_${videoInfo._id}`
@@ -158,7 +179,7 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
   );
 
   votesElements.forEach((item) => {
-    if (state.isSuperUser) {
+    if (state.isSuperUser || videoInfo.status === "done") {
       return;
     }
 
@@ -181,15 +202,19 @@ function renderSingleVideoRequest(videoInfo, isPrepend = false) {
         .then((bolb) => bolb.json())
         .then((data) => {
           scoreVoteElement.innerText = data.ups.length - data.downs.length;
-          applyVoteStyle(id, data, vote_type);
+          applyVoteStyle(id, data, videoInfo.status === "done", vote_type);
         });
     });
   });
 }
 
-function loadAllVideoRequests(sortBy = "newFirst", searchTerm = "") {
+function loadAllVideoRequests(
+  sortBy = "newFirst",
+  searchTerm = "",
+  filterBy = "all"
+) {
   fetch(
-    `//localhost:7777/video-request?sortBy=${sortBy}&searchTerm=${searchTerm}`
+    `//localhost:7777/video-request?sortBy=${sortBy}&searchTerm=${searchTerm}&filterBy=${filterBy}`
   )
     .then((bolb) => bolb.json())
     // .then((data) => console.log(data))
@@ -252,12 +277,12 @@ function updateVideoStatus(id, status, resVideo = "") {
     .then((data) => window.location.reload());
 }
 
-function applyVoteStyle(video_id, votes_list, vote_type) {
+function applyVoteStyle(video_id, votes_list, isDisabled, vote_type) {
   const voteUpsElement = document.getElementById(`votes_ups_${video_id}`);
   const voteDownsElement = document.getElementById(`votes_downs_${video_id}`);
 
   // super admin have no right to vote
-  if (state.isSuperUser) {
+  if (isDisabled) {
     voteUpsElement.style.opacity = "0.5";
     voteUpsElement.style.cursor = "not-allowed";
     voteDownsElement.style.opacity = "0.5";
@@ -297,7 +322,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const formVideoRequestElement = document.getElementById("formVideoRequest");
   const sortByElements = document.querySelectorAll("[id*=sort_by_]");
   const searchBoxElement = document.getElementById("search_box");
-
+  const filterByElements = document.querySelectorAll("[id^=filter_by_]");
   const formLoginElement = document.querySelector(".login-form");
 
   const appContentElement = document.querySelector(".app-content");
@@ -322,12 +347,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
   loadAllVideoRequests();
 
+  filterByElements.forEach((item) => {
+    item.addEventListener("click", function (e) {
+      e.preventDefault();
+      state.filterBy = e.target.getAttribute("id").split("_")[2];
+
+      filterByElements.forEach((option) => option.classList.remove("active"));
+      this.classList.add("active");
+      loadAllVideoRequests(state.sortBy, state.searchTerm, state.filterBy);
+    });
+  });
+
   sortByElements.forEach((element) => {
     element.addEventListener("click", function (e) {
       e.preventDefault();
 
       state.sortBy = this.querySelector("input").value;
-      loadAllVideoRequests(state.sortBy, state.searchTerm);
+      loadAllVideoRequests(state.sortBy, state.searchTerm, state.filterBy);
 
       this.classList.add("active");
 
@@ -346,7 +382,7 @@ document.addEventListener("DOMContentLoaded", function () {
       state.searchTerm = e.target.value;
 
       // undefined to take the default
-      loadAllVideoRequests(state.sortBy, state.searchTerm);
+      loadAllVideoRequests(state.sortBy, state.searchTerm, state.filterBy);
     }, 500)
   );
 
