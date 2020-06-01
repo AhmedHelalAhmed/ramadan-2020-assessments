@@ -1,76 +1,19 @@
 import { debounce } from "./debounce.js";
 import { renderSingleVideoRequest } from "./renderSingleVideoRequest.js";
-const listOfVideoesElement = document.getElementById("listOfRequests");
+import { checkValidity } from "./checkValidity.js";
+import API from "./api.js";
 
 const SUPER_USER_ID = "19900411";
 
 // if you made load it will come back to this default value
 // state is not persisted
-const state = {
+export const state = {
   sortBy: "newFist",
   searchTerm: "",
   filterBy: "all",
   userId: "",
   isSuperUser: false,
 };
-
-function loadAllVideoRequests(
-  sortBy = "newFirst",
-  searchTerm = "",
-  filterBy = "all"
-) {
-  fetch(
-    `//localhost:7777/video-request?sortBy=${sortBy}&searchTerm=${searchTerm}&filterBy=${filterBy}`
-  )
-    .then((bolb) => bolb.json())
-    // .then((data) => console.log(data))
-    .then((data) => {
-      listOfVideoesElement.innerHTML = "";
-      data.forEach((videoInfo) => {
-        // debugger;
-        renderSingleVideoRequest(videoInfo, state);
-      });
-    });
-}
-
-function checkValidity(formData) {
-  const topic = formData.get("topic_title");
-  const topicDetails = formData.get("topic_details");
-
-  if (!topic || topic.length > 30) {
-    document.querySelector("[name=topic_title]").classList.add("is-invalid");
-  }
-
-  if (!topicDetails) {
-    document.querySelector("[name=topic_details]").classList.add("is-invalid");
-  }
-
-  const allInvalidElements = document
-    .getElementById("formVideoRequest")
-    .querySelectorAll(".is-invalid");
-
-  if (allInvalidElements.length) {
-    allInvalidElements.forEach((element) => {
-      element.addEventListener("input", function () {
-        this.classList.remove("is-invalid");
-      });
-    });
-
-    return false;
-  }
-
-  return true;
-}
-
-function updateVideoStatus(id, status, resVideo = "") {
-  fetch("//localhost:7777/video-request", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, status, resVideo }),
-  })
-    .then((res) => res.json())
-    .then((data) => window.location.reload());
-}
 
 document.addEventListener("DOMContentLoaded", function () {
   /*
@@ -104,7 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
     appContentElement.classList.remove("d-none");
   }
 
-  loadAllVideoRequests();
+  API.loadAllVideoRequests();
 
   filterByElements.forEach((item) => {
     item.addEventListener("click", function (e) {
@@ -113,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       filterByElements.forEach((option) => option.classList.remove("active"));
       this.classList.add("active");
-      loadAllVideoRequests(state.sortBy, state.searchTerm, state.filterBy);
+      API.loadAllVideoRequests(state.sortBy, state.searchTerm, state.filterBy);
     });
   });
 
@@ -122,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
 
       state.sortBy = this.querySelector("input").value;
-      loadAllVideoRequests(state.sortBy, state.searchTerm, state.filterBy);
+      API.loadAllVideoRequests(state.sortBy, state.searchTerm, state.filterBy);
 
       this.classList.add("active");
 
@@ -141,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function () {
       state.searchTerm = e.target.value;
 
       // undefined to take the default
-      loadAllVideoRequests(state.sortBy, state.searchTerm, state.filterBy);
+      API.loadAllVideoRequests(state.sortBy, state.searchTerm, state.filterBy);
     }, 500)
   );
 

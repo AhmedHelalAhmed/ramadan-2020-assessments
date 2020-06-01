@@ -1,4 +1,5 @@
 import { applyVoteStyle } from "./applyVoteStyle.js";
+import API from "./api.js";
 
 const listOfVideoesElement = document.getElementById("listOfRequests");
 
@@ -120,7 +121,7 @@ export function renderSingleVideoRequest(videoInfo, state, isPrepend = false) {
       if (e.target.value === "done") {
         adminVideoResolutionContainer.classList.remove("d-none");
       } else {
-        updateVideoStatus(videoInfo._id, e.target.value);
+        API.updateVideoStatus(videoInfo._id, e.target.value);
       }
     });
 
@@ -135,7 +136,7 @@ export function renderSingleVideoRequest(videoInfo, state, isPrepend = false) {
         return;
       }
 
-      updateVideoStatus(
+      API.updateVideoStatus(
         videoInfo._id,
         "done",
         adminVideoResolutionElement.value
