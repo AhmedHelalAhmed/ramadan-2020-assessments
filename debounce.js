@@ -1,4 +1,4 @@
-function debounce(fn, time) {
+export function debounce(fn, time) {
   // delay then do action
   let timeout;
 
